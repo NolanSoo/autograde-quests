@@ -42,6 +42,143 @@
   
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.4.0"></script>  
   <script src="https://cdn.jsdelivr.net/npm/groq-sdk@0.8.0/+esm"></script>  
-  <script type="module" src="app.js"></script>  
+  <script type="module"> 
+    import { feedback } from './feedback.js';  
+  
+// Initialize the Groq client  
+const client = new Groq({  
+  apiKey: "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",  
+  dangerouslyAllowBrowser: true,  
+});  
+  
+// Initialize the app state  
+let prompts = [];  
+let currentPrompt = 0;  
+let writingAssignments = [];  
+let grades = [];  
+let scores = [];  
+let feedbacks = [];  
+  
+// Function to generate a new prompt  
+function generatePrompt() {  
+  const prompt = `Write a short story about a character who ${prompts[currentPrompt]}`;  
+  document.getElementById("prompt").innerText = prompt;  
+}  
+  
+// Function to grade the writing assignment  
+async function gradeWritingAssignment() {  
+  const writingAssignment = document.getElementById("writing-assignment").value;  
+  const grade = await getGrade(writingAssignment);  
+  document.getElementById("grade").innerText = `Grade: ${grade}`;  
+  scores.push(getScores(writingAssignment));  
+  feedbacks.push(await getFeedback(writingAssignment));  
+  displayScores();  
+  displayFeedback();  
+}  
+  
+// Function to get the grade using Groq  
+async function getGrade(writingAssignment) {  
+  const params = {  
+   messages: [  
+    {  
+      role: "system",  
+      content: `Grade this writing assignment: ${writingAssignment}`,  
+    },  
+   ],  
+   model: "llama3-8b-8192",  
+  };  
+  const chatCompletion = await client.chat.completions.create(params);  
+  const grade = chatCompletion.choices[0].message.content;  
+  return grade;  
+}  
+  
+// Function to get the scores using Groq  
+function getScores(writingAssignment) {  
+  const scores = {  
+   conciseness: 0,  
+   conventions: 0,  
+   detail: 0,  
+   descriptions: 0,  
+   creativity: 0,  
+   organization: 0,  
+   style: 0,  
+   tone: 0,  
+   voice: 0,  
+  };  
+  // Call the Groq API to get the scores  
+  return scores;  
+}  
+  
+// Function to display the scores  
+function displayScores() {  
+  const scoresList = document.getElementById("scores");  
+  scoresList.innerHTML = "";  
+  scores.forEach((score) => {  
+   const scoreListItem = document.createElement("li");  
+   scoreListItem.innerText = `Conciseness: ${score.conciseness}`;  
+   scoresList.appendChild(scoreListItem);  
+  });  
+}  
+  
+// Function to get the feedback using Groq  
+async function getFeedback(writingAssignment) {  
+  const params = {  
+   messages: [  
+    {  
+      role: "system",  
+      content: `Give feedback on this writing assignment: ${writingAssignment}`,  
+    },  
+   ],  
+   model: "llama3-8b-8192",  
+  };  
+  const chatCompletion = await client.chat.completions.create(params);  
+  const feedback = chatCompletion.choices[0].message.content;  
+  return feedback;  
+}  
+  
+// Function to display the feedback  
+function displayFeedback() {  
+  const feedbackParagraph = document.getElementById("feedback");  
+  feedbackParagraph.innerText = feedbacks[feedbacks.length - 1];  
+}  
+  
+// Event listeners  
+document.getElementById("submit-button").addEventListener("click", gradeWritingAssignment);  
+document.getElementById("next-button").addEventListener("click", () => {  
+  currentPrompt++;  
+  generatePrompt();  
+});  
+document.getElementById("save-button").addEventListener("click", () => {  
+  // Save the app state to local storage  
+  localStorage.setItem("prompts", JSON.stringify(prompts));  
+  localStorage.setItem("writingAssignments", JSON.stringify(writingAssignments));  
+  localStorage.setItem("grades", JSON.stringify(grades));  
+  localStorage.setItem("scores", JSON.stringify(scores));  
+  localStorage.setItem("feedbacks", JSON.stringify(feedbacks));  
+});  
+document.getElementById("load-button").addEventListener("click", () => {  
+  // Load the app state from local storage  
+  prompts = JSON.parse(localStorage.getItem("prompts"));  
+  writingAssignments = JSON.parse(localStorage.getItem("writingAssignments"));  
+  grades = JSON.parse(localStorage.getItem("grades"));  
+  scores = JSON.parse(localStorage.getItem("scores"));  
+  feedbacks = JSON.parse(localStorage.getItem("feedbacks"));  
+  currentPrompt = prompts.length - 1;  
+  generatePrompt();  
+});  
+  
+// Initialize the app  
+async function init() {  
+  prompts = [  
+   "goes on a adventure",  
+   "discovers a hidden talent",  
+   "makes a new friend",  
+   "learns a valuable lesson",  
+  ];  
+  generatePrompt();  
+}  
+  
+init();
+  </script>
 </body>  
 </html>
